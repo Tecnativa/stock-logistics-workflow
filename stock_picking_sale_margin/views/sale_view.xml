@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_sale_margin_sale_order_line_form" model="ir.ui.view">
+        <field name="name">sale.order.line.tree.stock.picking.margin.view.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+           <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="after">
+                <field name="real_cost_price" groups="base.group_user"/>
+                <field name="real_margin" groups="base.group_user"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
