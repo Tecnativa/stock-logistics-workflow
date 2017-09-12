@@ -16,10 +16,11 @@ class SaleOrderLine(models.Model):
         ).mapped(
             'move_ids'
         ).filtered(
-                lambda x: x.state == 'done' and
-                not x.invoice_line_id and
-                not x.location_dest_id.scrap_location and
-                x.location_dest_id.usage == 'customer').mapped(
+            lambda x: x.state == 'done' and
+            not x.invoice_line_id and
+            not x.location_dest_id.scrap_location and
+            x.location_dest_id.usage == 'customer'
+        ).mapped(
             'picking_id'
         ).write({'invoice_ids': [(4, invoice_id)]})
         return super(SaleOrderLine, self).invoice_line_create(invoice_id, qty)
