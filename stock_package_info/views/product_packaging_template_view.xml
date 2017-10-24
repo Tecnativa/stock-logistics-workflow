@@ -13,7 +13,7 @@
             <form string="Product Packaging Template">
                 <sheet>
                     <group>
-                        <field name="packaging_template_name" />
+                        <field name="name" />
                         <field name="active" />
                         <field name="package_type"/>
                     </group>
@@ -41,7 +41,7 @@
         <field name="model">product.packaging.template</field>
         <field name="arch" type="xml">
             <tree string="Product Packaging Templates">
-                <field name="packaging_template_name"/>
+                <field name="name"/>
                 <field name="package_type"/>
                 <field name="length" />
                 <field name="length_uom_id" />
@@ -59,7 +59,7 @@
         <field name="arch" type="xml">
             <search string="Product Packaging Templates">
                 
-                <field name="packaging_template_name"/>
+                <field name="name"/>
                 <field name="package_type"/>
                 <field name="length" />
                 <field name="length_uom_id" />

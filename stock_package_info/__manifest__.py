@@ -18,6 +18,7 @@
     "website": "https://odoo-community.org/",
     "category": "Inventory, Logistic, Storage",
     "depends": [
+        "base_locale_uom_default",
         "sale",
         "stock",
     ],

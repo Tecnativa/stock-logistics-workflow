@@ -4,13 +4,18 @@
 # Copyright 2015 AvanzOsc
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class ProductPackaging(models.Model):
-    _inherit = 'product.packaging'
-    _inherits = {'product.packaging.template': 'product_pack_tmpl_id'}
 
+    _name = 'product.packaging'
+    _inherit = ['product.packaging', 'product.packaging.template']
+
+    product_pack_tmpl_id = fields.Many2one(
+        name='Product Package Template',
+        comodel_name='product.packaging.template',
+    )
     layer_qty = fields.Integer(
         string='Package by Layer',
         help='The number of packages by layer',
@@ -18,13 +23,8 @@ class ProductPackaging(models.Model):
     rows = fields.Integer(
         string='Number of Layers',
         required=True,
+        default=1,
         help='The number of layers on a pallet or box',
-    )
-    product_pack_tmpl_id = fields.Many2one(
-        name='Product Package Template',
-        comodel_name='product.packaging.template',
-        ondelete='restrict',
-        required=True,
     )
     ean = fields.Char(
         string='EAN',
@@ -38,3 +38,18 @@ class ProductPackaging(models.Model):
         string='Total Package Weight',
         help='The weight of a full package, pallet or box',
     )
+
+    @api.onchange('product_pack_tmpl_id')
+    def _onchange_product_pack_tmpl_id(self):
+        """Update the package fields with that of the template."""
+
+        template = self.product_pack_tmpl_id
+
+        for field_name, field in template._fields.iteritems():
+
+            if not any((
+                field.compute, field.related, field.automatic,
+                field.readonly, field.company_dependent,
+                field.name in self.NO_SYNC,
+            )):
+                self[field_name] = self.product_pack_tmpl_id[field_name]

@@ -19,7 +19,6 @@
                         <field name="package_ids" nolabel="1">
                             <tree>
                                 <field name="name" />
-                                <field name="product_pack_tmpl_id" />
                                 <field name="width" />
                                 <field name="height" />
                                 <field name="length" />

@@ -19,9 +19,9 @@ class StockQuantPackage(models.Model):
         string='Pickings',
         compute='_compute_picking_ids',
     )
-    product_pack_tmpl_id = fields.Many2one(
-        comodel_name='product.packaging.template',
-        string='Packaging Template',
+    product_packaging_id = fields.Many2one(
+        comodel_name='product.packaging',
+        string='Packaging',
     )
     length = fields.Float(
         digits=dp.get_precision('Stock Weight'),
@@ -171,20 +171,20 @@ class StockQuantPackage(models.Model):
             ).mapped('picking_id')
 
     @api.multi
-    @api.onchange('product_pack_tmpl_id')
-    def onchange_product_pack_tmpl_id(self):
+    @api.onchange('product_packaging_id')
+    def onchange_product_packaging_id(self):
         for rec_id in self:
-            tmpl = rec_id.product_pack_tmpl_id
-            rec_id.length = tmpl.length
-            rec_id.width = tmpl.width
-            rec_id.height = tmpl.height
-            rec_id.empty_weight = tmpl.weight
+            package = rec_id.product_packaging
+            rec_id.length = package.length
+            rec_id.width = package.width
+            rec_id.height = package.height
+            rec_id.empty_weight = package.weight
 
     @api.model
     def create(self, vals):
-        if vals.get('product_pack_tmpl_id', False):
-            tmpl = self.env['product.packaging.template'].browse(
-                vals.get('product_pack_tmpl_id')
+        if vals.get('product_packaging_id', False):
+            tmpl = self.env['product.packaging'].browse(
+                vals.get('product_packaging_id')
             )
             vals.update({
                 'length': tmpl.length,
