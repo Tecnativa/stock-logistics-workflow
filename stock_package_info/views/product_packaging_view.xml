@@ -13,7 +13,7 @@
             <tree string="Packaging">
                 <field name="sequence" widget="handle"/>
                 <field name="product_tmpl_id"/>
-                <field name="ean"/>
+                <field name="barcode"/>
                 <field name="layer_qty"/>
             </tree>
         </field>

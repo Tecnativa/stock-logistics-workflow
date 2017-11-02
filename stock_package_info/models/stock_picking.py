@@ -4,6 +4,8 @@
 # Copyright 2015 AvanzOsc
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
+from collections import defaultdict
+
 from odoo import api, fields, models
 from odoo.tools.float_utils import float_compare
 
@@ -83,8 +85,8 @@ class StockPicking(models.Model):
         pack_op_obj = self.env['stock.pack.operation']
         ops = self.env['stock.pack.operation']
         for picking in self:
-            forced_qties = {}
-            picking_quants = []
+            forced_qties = defaultdict(int)
+            picking_quants = self.env['stock.quant']
             for move in picking.move_lines:
                 if move.state not in ('assigned', 'confirmed', 'waiting'):
                     continue
@@ -95,10 +97,7 @@ class StockPicking(models.Model):
                 rounding = move.product_id.uom_id.rounding
                 if float_compare(forced_qty, 0,
                                  precision_rounding=rounding) > 0:
-                    if forced_qties.get(move.product_id):
-                        forced_qties[move.product_id] += forced_qty
-                    else:
-                        forced_qties[move.product_id] = forced_qty
+                    forced_qties[move.product_id] += forced_qty
             for vals in picking._prepare_pack_ops(
                     picking, picking_quants, forced_qties):
                 domain = [('picking_id', '=', picking.id)]

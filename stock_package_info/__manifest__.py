@@ -23,6 +23,7 @@
         "stock",
     ],
     "data": [
+        "data/ir_sequence_data.xml",
         "views/product_packaging_view.xml",
         "views/product_template_view.xml",
         "views/product_packaging_template_view.xml",

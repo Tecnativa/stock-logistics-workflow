@@ -92,12 +92,12 @@ class StockQuantPackage(models.Model):
         'quant_ids.total_weight_net',
     )
     def _compute_total_weights(self):
-        for rec_id in self:
-            rec_id.total_weight, rec_id.total_weight_net = 0, 0
+        for record in self:
+            record.total_weight, record.total_weight_net = 0, 0
 
-            for quant_id in rec_id.quant_ids:
-                rec_id.total_weight += quant_id.total_weight
-                rec_id.total_weight_net += quant_id.total_weight_net
+            for quant_id in record.quant_ids:
+                record.total_weight += quant_id.total_weight
+                record.total_weight_net += quant_id.total_weight_net
 
     @api.multi
     @api.depends(
@@ -108,16 +108,16 @@ class StockQuantPackage(models.Model):
         'children_ids.empty_weight',
     )
     def _compute_total_est_weights(self):
-        for rec_id in self:
+        for record in self:
             estim_sum = (
-                rec_id.total_weight + rec_id.empty_weight
+                record.total_weight + record.empty_weight
             )
-            for child_id in rec_id.children_ids:
+            for child_id in record.children_ids:
                 estim_sum += (
                     child_id.total_weight + child_id.empty_weight
                 )
-            rec_id.total_est_weight = estim_sum
-            rec_id.real_weight = estim_sum
+            record.total_est_weight = estim_sum
+            record.real_weight = estim_sum
 
     @api.multi
     @api.depends(
@@ -128,57 +128,57 @@ class StockQuantPackage(models.Model):
         'children_ids.empty_weight',
     )
     def _compute_total_est_weight_net(self):
-        for rec_id in self:
+        for record in self:
             estim_sum = (
-                rec_id.total_weight_net + rec_id.empty_weight
+                record.total_weight_net + record.empty_weight
             )
-            for child_id in rec_id.children_ids:
+            for child_id in record.children_ids:
                 estim_sum += (
                     child_id.total_weight_net + child_id.empty_weight
                 )
-            rec_id.total_est_weight_net = estim_sum
+            record.total_est_weight_net = estim_sum
 
     @api.multi
     @api.depends('height', 'width', 'length')
     def _compute_permitted_volume(self):
-        for rec_id in self:
-            rec_id.permitted_volume = (
-                rec_id.height * rec_id.width * rec_id.length
+        for record in self:
+            record.permitted_volume = (
+                record.height * record.width * record.length
             )
 
     @api.multi
     @api.depends('quant_ids', 'quant_ids.total_volume')
     def _compute_total_volume(self):
-        for rec_id in self:
-            rec_id.total_volume = 0
-            for quant_id in rec_id.quant_ids:
-                rec_id.total_volume += quant_id.total_volume
+        for record in self:
+            record.total_volume = 0
+            for quant_id in record.quant_ids:
+                record.total_volume += quant_id.total_volume
 
     @api.multi
     @api.depends('total_volume', 'children_ids.total_volume')
     def _compute_total_volume_charge(self):
-        for rec_id in self:
-            volume_sum = rec_id.total_volume
-            for child_id in rec_id.children_ids:
+        for record in self:
+            volume_sum = record.total_volume
+            for child_id in record.children_ids:
                 volume_sum += child_id.total_volume
-            rec_id.total_volume_charge = volume_sum
+            record.total_volume_charge = volume_sum
 
     @api.multi
     def _compute_picking_ids(self):
-        for rec_id in self:
-            rec_id.picking_ids = self.env['stock.pack.operation'].search(
-                [('result_package_id', '=', rec_id.id)]
+        for record in self:
+            record.picking_ids = self.env['stock.pack.operation'].search(
+                [('result_package_id', '=', record.id)]
             ).mapped('picking_id')
 
     @api.multi
     @api.onchange('product_packaging_id')
     def onchange_product_packaging_id(self):
-        for rec_id in self:
-            package = rec_id.product_packaging
-            rec_id.length = package.length
-            rec_id.width = package.width
-            rec_id.height = package.height
-            rec_id.empty_weight = package.weight
+        for record in self:
+            package = record.product_packaging
+            record.length = package.length
+            record.width = package.width
+            record.height = package.height
+            record.empty_weight = package.weight
 
     @api.model
     def create(self, vals):

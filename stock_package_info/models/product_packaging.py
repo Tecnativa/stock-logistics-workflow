@@ -26,10 +26,8 @@ class ProductPackaging(models.Model):
         default=1,
         help='The number of layers on a pallet or box',
     )
-    ean = fields.Char(
-        string='EAN',
-        size=14,
-        help='The EAN code of the package unit',
+    barcode = fields.Char(
+        help='The barcode code of the package unit',
     )
     code = fields.Char(
         help='The code of the transport unit',
