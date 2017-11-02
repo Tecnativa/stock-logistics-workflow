@@ -5,7 +5,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from odoo import api, fields, models
-from odoo.addons import decimal_precision as dp
 
 
 class ProductPackagingTemplate(models.Model):
@@ -33,9 +32,7 @@ class ProductPackagingTemplate(models.Model):
         index=True,
         ondelete='cascade',
     )
-    length = fields.Float(
-        digits=dp.get_precision('Stock Weight'),
-    )
+    length = fields.Integer()
     length_uom_id = fields.Many2one(
         string='Length Unit',
         comodel_name='product.uom',
@@ -48,9 +45,7 @@ class ProductPackagingTemplate(models.Model):
             'Length / Distance',
         ),
     )
-    width = fields.Float(
-        digits=dp.get_precision('Stock Weight'),
-    )
+    width = fields.Integer()
     width_uom_id = fields.Many2one(
         string='Width Unit',
         comodel_name='product.uom',
@@ -63,9 +58,7 @@ class ProductPackagingTemplate(models.Model):
             'Length / Distance',
         ),
     )
-    height = fields.Float(
-        digits=dp.get_precision('Stock Weight'),
-    )
+    height = fields.Integer()
     height_uom_id = fields.Many2one(
         string='Height Unit',
         comodel_name='product.uom',
