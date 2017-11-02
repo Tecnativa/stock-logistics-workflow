@@ -5,7 +5,12 @@ from odoo import api, SUPERUSER_ID
 
 
 def post_init_hook(cr, registry):
-    """Enable packaging options in stock config."""
+    """Enable packaging options in stock config & migrate dimensions."""
+
+    # cr.execute("UPDATE product_packaging "
+    #            "SET length_float = product_packaging.length, "
+    #            "    width_float = product_packaging.width, "
+    #            "    height_float = product_packaging.height")
 
     with api.Environment.manage():
         env = api.Environment(cr, SUPERUSER_ID, {})

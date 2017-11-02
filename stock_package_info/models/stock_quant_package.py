@@ -19,10 +19,6 @@ class StockQuantPackage(models.Model):
         string='Pickings',
         compute='_compute_picking_ids',
     )
-    product_packaging_id = fields.Many2one(
-        comodel_name='product.packaging',
-        string='Packaging',
-    )
     length = fields.Float(
         digits=dp.get_precision('Stock Weight'),
         help='The length of the package',
@@ -87,22 +83,22 @@ class StockQuantPackage(models.Model):
     length_uom_id = fields.Many2one(
         string='Length Unit',
         comodel_name='product.uom',
-        related='product_packaging_id.length_uom_id',
+        related='packaging_id.length_uom_id',
     )
     width_uom_id = fields.Many2one(
         string='Width Unit',
         comodel_name='product.uom',
-        related='product_packaging_id.width_uom_id',
+        related='packaging_id.width_uom_id',
     )
     height_uom_id = fields.Many2one(
         string='Height Unit',
         comodel_name='product.uom',
-        related='product_packaging_id.height_uom_id',
+        related='packaging_id.height_uom_id',
     )
     weight_uom_id = fields.Many2one(
         string='Weight Unit',
         comodel_name='product.uom',
-        related='product_packaging_id.weight_uom_id',
+        related='packaging_id.weight_uom_id',
     )
 
     @api.multi
@@ -191,25 +187,25 @@ class StockQuantPackage(models.Model):
             ).mapped('picking_id')
 
     @api.multi
-    @api.onchange('product_packaging_id')
+    @api.onchange('packaging_id')
     def onchange_product_packaging_id(self):
         for record in self:
-            package = record.product_packaging_id
-            record.length = package.length
-            record.width = package.width
-            record.height = package.height
+            package = record.packaging_id
+            record.length = package.length_float
+            record.width = package.width_float
+            record.height = package.height_float
             record.empty_weight = package.weight
 
     @api.model
     def create(self, vals):
-        if vals.get('product_packaging_id', False):
-            tmpl = self.env['product.packaging'].browse(
-                vals.get('product_packaging_id')
+        if vals.get('packaging_id', False):
+            package = self.env['product.packaging'].browse(
+                vals.get('packaging_id')
             )
             vals.update({
-                'length': tmpl.length,
-                'width': tmpl.width,
-                'height': tmpl.height,
-                'empty_weight': tmpl.weight,
+                'length': package.length_float,
+                'width': package.width_float,
+                'height': package.height_float,
+                'empty_weight': package.weight,
             })
         return super(StockQuantPackage, self).create(vals)
