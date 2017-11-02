@@ -194,7 +194,7 @@ class StockQuantPackage(models.Model):
     @api.onchange('product_packaging_id')
     def onchange_product_packaging_id(self):
         for record in self:
-            package = record.product_packaging
+            package = record.product_packaging_id
             record.length = package.length
             record.width = package.width
             record.height = package.height
