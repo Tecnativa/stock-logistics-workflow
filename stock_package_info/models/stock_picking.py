@@ -68,11 +68,11 @@ class StockPicking(models.Model):
                 }
                 pack_weight += pack_weight_obj.create(vals)
             if packages:
-                for tmpl in packages.mapped('product_pack_tmpl_id'):
+                for tmpl in packages.mapped('product_packaging_id'):
                     cont = len(packages.filtered(
                         lambda x: x.product_pack_tmpl_id.id == tmpl.id))
                     vals = {
-                        'product_pack_tmpl_id': tmpl.id,
+                        'product_packaging_id': tmpl.id,
                         'quantity': cont,
                     }
                     pack_total += pack_total_obj.create(vals)

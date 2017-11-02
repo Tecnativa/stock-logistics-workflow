@@ -84,6 +84,26 @@ class StockQuantPackage(models.Model):
         compute='_compute_total_est_weights',
         digits=dp.get_precision('Stock Weight'),
     )
+    length_uom_id = fields.Many2one(
+        string='Length Unit',
+        comodel_name='product.uom',
+        related='product_packaging_id.length_uom_id',
+    )
+    width_uom_id = fields.Many2one(
+        string='Width Unit',
+        comodel_name='product.uom',
+        related='product_packaging_id.width_uom_id',
+    )
+    height_uom_id = fields.Many2one(
+        string='Height Unit',
+        comodel_name='product.uom',
+        related='product_packaging_id.height_uom_id',
+    )
+    weight_uom_id = fields.Many2one(
+        string='Weight Unit',
+        comodel_name='product.uom',
+        related='product_packaging_id.weight_uom_id',
+    )
 
     @api.multi
     @api.depends(
