@@ -33,7 +33,9 @@ class ProductPackagingTemplate(models.Model):
         index=True,
         ondelete='cascade',
     )
-    length = fields.Integer()
+    length_float = fields.Float(
+        digits=dp.get_precision('Stock Weight'),
+    )
     length_uom_id = fields.Many2one(
         string='Length Unit',
         comodel_name='product.uom',
@@ -46,7 +48,9 @@ class ProductPackagingTemplate(models.Model):
             'Length / Distance',
         ),
     )
-    width = fields.Integer()
+    width_float = fields.Float(
+        digits=dp.get_precision('Stock Weight'),
+    )
     width_uom_id = fields.Many2one(
         string='Width Unit',
         comodel_name='product.uom',
@@ -59,7 +63,9 @@ class ProductPackagingTemplate(models.Model):
             'Length / Distance',
         ),
     )
-    height = fields.Integer()
+    height_float = fields.Float(
+        digits=dp.get_precision('Stock Weight'),
+    )
     height_uom_id = fields.Many2one(
         string='Height Unit',
         comodel_name='product.uom',

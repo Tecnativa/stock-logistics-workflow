@@ -18,6 +18,7 @@
     "website": "https://odoo-community.org/",
     "category": "Inventory, Logistic, Storage",
     "post_init_hook": "post_init_hook",
+    "uninstall_hook": "uninstall_hook",
     "depends": [
         "base_locale_uom_default",
         "sale",
