@@ -22,19 +22,23 @@ class StockQuantPackage(models.Model):
     length = fields.Float(
         digits=dp.get_precision('Stock Weight'),
         help='The length of the package',
+        related='packaging_id.length_float',
     )
     width = fields.Float(
         digits=dp.get_precision('Stock Weight'),
         help='The width of the package',
+        related='packaging_id.width_float',
     )
     height = fields.Float(
         digits=dp.get_precision('Stock Weight'),
         help='The height of the package',
+        related='packaging_id.height_float',
     )
     empty_weight = fields.Float(
         string='Empty Package Weight',
         digits=dp.get_precision('Stock Weight'),
-        help='Weight of the empty package'
+        help='Weight of the empty package',
+        related='packaging_id.weight',
     )
     permitted_volume = fields.Float(
         store=True,
@@ -195,17 +199,3 @@ class StockQuantPackage(models.Model):
             record.width = package.width_float
             record.height = package.height_float
             record.empty_weight = package.weight
-
-    @api.model
-    def create(self, vals):
-        if vals.get('packaging_id', False):
-            package = self.env['product.packaging'].browse(
-                vals.get('packaging_id')
-            )
-            vals.update({
-                'length': package.length_float,
-                'width': package.width_float,
-                'height': package.height_float,
-                'empty_weight': package.weight,
-            })
-        return super(StockQuantPackage, self).create(vals)
