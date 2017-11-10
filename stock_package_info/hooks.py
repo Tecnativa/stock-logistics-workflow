@@ -15,7 +15,6 @@ def post_init_hook(cr, registry):
     with api.Environment.manage():
         env = api.Environment(cr, SUPERUSER_ID, {})
         wizard = env['stock.config.settings'].create({
-            'group_stock_packaging': 1,
             'group_stock_tracking_lot': 1,
         })
         wizard.execute()
