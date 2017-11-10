@@ -95,20 +95,20 @@ class StockPicking(models.Model):
                 if float_compare(forced_qty, 0,
                                  precision_rounding=rounding) > 0:
                     forced_qties[move.product_id] += forced_qty
-            for vals in picking._prepare_pack_ops(
-                    picking, picking_quants, forced_qties):
+            pack_ops = picking._prepare_pack_ops(picking_quants, forced_qties)
+            for pack_op_vals in pack_ops:
                 domain = [('picking_id', '=', picking.id)]
-                if vals.get('lot_id', False):
-                    domain += [('lot_id', '=', vals['lot_id'])]
-                if vals.get('product_id', False):
-                    domain += [('product_id', '=', vals['product_id'])]
+                if pack_op_vals.get('lot_id'):
+                    domain += [('lot_id', '=', pack_op_vals['lot_id'])]
+                if pack_op_vals.get('product_id'):
+                    domain += [('product_id', '=', pack_op_vals['product_id'])]
                 packs = pack_op_obj.search(domain)
                 if packs:
                     qty = sum([x.product_qty for x in packs])
-                    new_qty = vals.get('product_qty', 0) - qty
+                    new_qty = pack_op_vals.get('product_qty', 0) - qty
                     if new_qty > 0:
-                        vals['product_qty'] = new_qty
+                        pack_op_vals['product_qty'] = new_qty
                     else:
                         continue
-                ops |= pack_op_obj.create(vals)
+                ops |= pack_op_obj.create(pack_op_vals)
         return ops
