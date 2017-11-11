@@ -37,44 +37,53 @@ class StockPicking(models.Model):
 
     @api.multi
     def _compute_picking_packages(self):
-        for rec_id in self:
-            rec_id.package_ids = (rec_id.pack_operation_ids.mapped(
-                'result_package_id') | rec_id.pack_operation_ids.mapped(
-                'package_id'))
+        for record in self:
+            package_ids = set(
+                record.pack_operation_ids.mapped('result_package_id.id'),
+                record.pack_operation_ids.mapped('package_id.id'),
+            )
+            record.package_ids = [(6, 0, package_ids)]
 
     @api.multi
     def _compute_picking_package_info_ids(self):
+
         pack_weight_obj = self.env['stock.picking.package.weight.lot']
         pack_total_obj = self.env['stock.picking.package.total']
+
         for record in self:
-            record.package_info_ids.unlink()
-            record.package_total_ids.unlink()
+
             pack_weight = self.env['stock.picking.package.weight.lot']
             pack_total = self.env['stock.picking.package.total']
-            packages = (record.pack_operation_ids.mapped('result_package_id') |
-                        record.pack_operation_ids.mapped('package_id'))
+            product_packages = defaultdict(int)
             sequence = 0
-            for package in packages:
+
+            for package in record.package_ids:
+
                 sequence += 1
-                total_weight = sum([(x.qty * x.product_id.weight) for x
-                                    in package.quant_ids])
-                lots = (package.quant_ids.mapped('lot_id').ids or [])
-                vals = {
+                total_weight = sum([
+                    (x.qty * x.product_id.weight) for x in package.quant_ids
+                ])
+                lots = package.quant_ids.mapped('lot_id')
+
+                pack_weight += pack_weight_obj.create({
                     'sequence': sequence,
                     'package_id': package.id,
-                    'lot_ids': [(6, 0, lots)],
+                    'lot_ids': [(6, 0, lots.ids)],
                     'net_weight': total_weight,
                     'gross_weight': total_weight + package.empty_weight,
-                }
-                pack_weight += pack_weight_obj.create(vals)
-
-                pack_total += pack_total_obj.create({
-                    'product_packaging_id': package.id,
-                    'quantity': 1,
                 })
 
-            record.package_info_ids = pack_weight
-            record.package_total_ids = pack_total
+                if package.packaging_id:
+                    product_packages[package.packaging_id] += 1
+
+            for product_package, qty in product_packages.items():
+                pack_total += pack_total_obj.create({
+                    'product_packaging_id': product_package.id,
+                    'quantity': qty,
+                })
+
+            record.package_info_ids = [(6, 0, pack_weight.ids)]
+            record.package_total_ids = [(6, 0, pack_total.ids)]
             record.num_packages = sum(x.quantity for x in pack_total)
 
     @api.multi

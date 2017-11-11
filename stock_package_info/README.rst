@@ -43,8 +43,6 @@ Known issues / Roadmap
 
 * Computed fields in `stock.picking` are not stored because the dependant field
   is an O2M relation that is never implicitly set via ORM or views.
-* I have no idea what product.packaging.total does or is meant for. It's basically
- useless, but for some reason embedded in everything.
 
 Bug Tracker
 ===========
