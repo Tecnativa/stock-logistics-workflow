@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 Carlos Dauden - Tecnativa <carlos.dauden@tecnativa.com>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from openerp.tests.common import SavepointCase
+from odoo.tests.common import SavepointCase
 
 
 class PackOperationQuickLotCase(SavepointCase):
+    at_install = False
+    post_install = True
+
     @classmethod
     def setUpClass(cls):
         super(PackOperationQuickLotCase, cls).setUpClass()
@@ -32,7 +34,7 @@ class PackOperationQuickLotCase(SavepointCase):
             'location_dest_id': cls.stock_location.id,
         })
         cls.picking.action_assign()
-        cls.operation = cls.picking.pack_operation_ids[:1]
+        cls.operation = cls.picking.move_lines[:1]
 
     def test_quick_input(self):
         self.assertTrue(self.operation)
@@ -40,11 +42,11 @@ class PackOperationQuickLotCase(SavepointCase):
             'lot_name': 'SN99999999999',
             'life_date': '2030-12-31',
         })
-        lot = self.operation.pack_lot_ids[:1].lot_id
+        lot = self.operation.move_line_ids[:1].lot_id
         self.assertTrue(lot)
         self.operation.lot_name = 'SN99999999998'
-        lot2 = self.operation.pack_lot_ids[:1].lot_id
+        lot2 = self.operation.move_line_ids[:1].lot_id
         self.assertNotEqual(lot, lot2)
         self.operation.life_date = '2030-12-28'
         self.assertEqual(lot2.life_date, '2030-12-28 00:00:00')
-        self.assertAlmostEqual(self.operation.qty_done, 5.0)
+        self.assertAlmostEqual(self.operation.quantity_done, 5.0)

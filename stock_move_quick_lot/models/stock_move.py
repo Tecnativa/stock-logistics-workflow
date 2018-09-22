@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 Carlos Dauden - Tecnativa <carlos.dauden@tecnativa.com>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from openerp import _, api, fields, models
-from openerp.exceptions import ValidationError
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
-class StockPackOperation(models.Model):
-    _inherit = 'stock.pack.operation'
+class StockMove(models.Model):
+    _inherit = 'stock.move'
 
     lot_name = fields.Char(
         string='Lot Name',
@@ -29,11 +28,13 @@ class StockPackOperation(models.Model):
     def _compute_lot_name(self):
         for line in self:
             line.lot_name = ', '.join(
-                pl.lot_id.name for pl in line.pack_lot_ids)
+                lot.name for lot in line.mapped('move_line_ids.lot_id'))
 
     @api.multi
     def _inverse_lot_name(self):
         for line in self:
+            if not line.lot_name:
+                continue
             lot = line.production_lot_from_name()
             if not lot:
                 lot = lot.create({
@@ -41,18 +42,21 @@ class StockPackOperation(models.Model):
                     'product_id': self.product_id.id,
                     'life_date': self.life_date,
                 })
-            if line.pack_lot_ids:
-                if line.pack_lot_ids.lot_id != lot:
-                    line.pack_lot_ids.lot_id = lot
+            if line.move_line_ids:
+                if line.move_line_ids.lot_id != lot:
+                    line.move_line_ids.lot_id = lot
             else:
-                lot_qty = line.qty_done or line.product_qty
-                line.update({
-                    'pack_lot_ids': [(0, 0, {
-                        'qty_todo': line.product_qty,
-                        'qty': lot_qty,
-                        'lot_id': lot.id,
-                    })],
+                print('xxx')
+                lot_qty = line.quantity_done or line.product_qty
+                move_line_vals = line._prepare_move_line_vals()
+                move_line_vals.update({
+                    'ordered_qty': line.product_qty,
                     'qty_done': lot_qty,
+                    'lot_id': lot.id,
+                })
+                line.update({
+                    'move_line_ids': [(0, 0, move_line_vals)],
+                    'quantity_done': lot_qty,
                 })
 
     @api.multi
@@ -66,7 +70,7 @@ class StockPackOperation(models.Model):
                 ], limit=1)
                 line.life_date = lot.life_date
             else:
-                line.life_date = line.pack_lot_ids[:1].lot_id.life_date
+                line.life_date = line.move_line_ids[:1].lot_id.life_date
 
     @api.multi
     def _inverse_life_date(self):
@@ -79,11 +83,11 @@ class StockPackOperation(models.Model):
     def production_lot_from_name(self):
         StockProductionLot = self.env['stock.production.lot']
         if not self.lot_name:
-            if self.pack_lot_ids:
+            if self.move_line_ids:
                 raise ValidationError(_('Open detail to remove lot'))
             else:
                 return StockProductionLot.browse()
-        if len(self.pack_lot_ids) > 1:
+        if len(self.move_line_ids) > 1:
             raise ValidationError(_('Go to lots to change data'))
         lot = StockProductionLot.search([
             ('product_id', '=', self.product_id.id),
