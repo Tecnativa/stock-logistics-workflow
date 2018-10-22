@@ -1,17 +1,17 @@
 # Copyright 2018 Carlos Dauden - Tecnativa <carlos.dauden@tecnativa.com>
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 
 class StockMove(models.Model):
     _inherit = 'stock.move'
 
-    lot_name = fields.Char(
+    line_lot_name = fields.Char(
         string='Lot Name',
-        compute='_compute_lot_name',
-        inverse='_inverse_lot_name',
+        compute='_compute_line_lot_name',
+        inverse='_inverse_line_lot_name',
     )
     life_date = fields.Datetime(
         string='End of Life Date',
@@ -25,20 +25,20 @@ class StockMove(models.Model):
     )
 
     @api.multi
-    def _compute_lot_name(self):
+    def _compute_line_lot_name(self):
         for line in self:
-            line.lot_name = ', '.join(
+            line.line_lot_name = ', '.join(
                 lot.name for lot in line.mapped('move_line_ids.lot_id'))
 
     @api.multi
-    def _inverse_lot_name(self):
+    def _inverse_line_lot_name(self):
         for line in self:
-            if not line.lot_name:
+            if not line.line_lot_name:
                 continue
             lot = line.production_lot_from_name()
             if not lot:
                 lot = lot.create({
-                    'name': self.lot_name,
+                    'name': self.line_lot_name,
                     'product_id': self.product_id.id,
                     'life_date': self.life_date,
                 })
@@ -46,7 +46,6 @@ class StockMove(models.Model):
                 if line.move_line_ids.lot_id != lot:
                     line.move_line_ids.lot_id = lot
             else:
-                print('xxx')
                 lot_qty = line.quantity_done or line.product_qty
                 move_line_vals = line._prepare_move_line_vals()
                 move_line_vals.update({
@@ -60,13 +59,13 @@ class StockMove(models.Model):
                 })
 
     @api.multi
-    @api.depends('product_id', 'lot_name')
+    @api.depends('product_id', 'line_lot_name')
     def _compute_life_date(self):
         for line in self:
             if isinstance(line.id, models.NewId):
                 lot = self.env['stock.production.lot'].search([
                     ('product_id', '=', self.product_id.id),
-                    ('name', '=', self.lot_name),
+                    ('name', '=', self.line_lot_name),
                 ], limit=1)
                 line.life_date = lot.life_date
             else:
@@ -82,7 +81,7 @@ class StockMove(models.Model):
     @api.multi
     def production_lot_from_name(self):
         StockProductionLot = self.env['stock.production.lot']
-        if not self.lot_name:
+        if not self.line_lot_name:
             if self.move_line_ids:
                 raise ValidationError(_('Open detail to remove lot'))
             else:
@@ -91,7 +90,7 @@ class StockMove(models.Model):
             raise ValidationError(_('Go to lots to change data'))
         lot = StockProductionLot.search([
             ('product_id', '=', self.product_id.id),
-            ('name', '=', self.lot_name),
+            ('name', '=', self.line_lot_name),
         ], limit=1)
         return lot
 

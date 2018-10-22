@@ -39,12 +39,12 @@ class PackOperationQuickLotCase(SavepointCase):
     def test_quick_input(self):
         self.assertTrue(self.operation)
         self.operation.write({
-            'lot_name': 'SN99999999999',
+            'line_lot_name': 'SN99999999999',
             'life_date': '2030-12-31',
         })
         lot = self.operation.move_line_ids[:1].lot_id
         self.assertTrue(lot)
-        self.operation.lot_name = 'SN99999999998'
+        self.operation.line_lot_name = 'SN99999999998'
         lot2 = self.operation.move_line_ids[:1].lot_id
         self.assertNotEqual(lot, lot2)
         self.operation.life_date = '2030-12-28'

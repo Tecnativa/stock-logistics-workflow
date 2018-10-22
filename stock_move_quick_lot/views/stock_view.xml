@@ -12,7 +12,7 @@
         <xpath expr="//field[@name='move_lines']/tree//field[@name='product_id']"
                position="after">
             <field name="lot_track_enabled" invisible="1"/>
-            <field name="lot_name"
+            <field name="line_lot_name"
                    attrs="{'readonly': [('lot_track_enabled','=', False)]}"/>
             <field name="life_date"
                    attrs="{'column_invisible': [('parent.picking_type_code', '!=', 'incoming')], 'readonly': [('lot_track_enabled','=', False)]}"/>
