@@ -27,7 +27,6 @@ class TestStockPickingProductAssortment(TransactionCase):
                 "type": "product",
                 "categ_id": self.product_category.id,
                 "description_sale": "Test Description Sale",
-                "sale_line_warn": "no-message",
             }
         )
         product_2 = self.product_obj.create(
@@ -37,7 +36,6 @@ class TestStockPickingProductAssortment(TransactionCase):
                 "type": "product",
                 "categ_id": self.product_category.id,
                 "description_sale": "Test Description Sale",
-                "sale_line_warn": "no-message",
             }
         )
         assortment_with_whitelist = self.filter_obj.create(
