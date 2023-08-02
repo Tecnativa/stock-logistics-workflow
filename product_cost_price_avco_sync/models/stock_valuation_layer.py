@@ -55,16 +55,13 @@ class StockValuationLayer(models.Model):
 
     def get_svls_to_avco_sync(self):
         self.ensure_one()
-        # return self.product_id.stock_valuation_layer_ids
         domain = [
             ("company_id", "=", self.company_id.id),
             ("product_id", "=", self.product_id.id),
         ]
-        return (
-            self.env["stock.valuation.layer"]
-            .sudo()
-            .search(domain, order="create_date, id")
-        )
+        if not self.env.context.get("force_all_avco_sync", False):
+            domain.append(("id", ">=", self.id))
+        return self.sudo().search(domain, order="create_date, id")
 
     def get_avco_svl_qty_unit_cost(self, line, vals):
         self.ensure_one()
@@ -258,6 +255,25 @@ class StockValuationLayer(models.Model):
         """
         return False
 
+    def get_avco_sync_previous_values(self):
+        if not self:
+            return 0.0, 0.0
+        domain = [
+            ("product_id", "=", self.product_id.id),
+            ("company_id", "=", self.company_id.id),
+            ("id", "<", self.id),
+        ]
+        groups = self.read_group(
+            domain, ["value:sum", "quantity:sum"], [], orderby="id"
+        )
+        previous_qty = groups[0]["quantity"] or 0.0
+        previous_value = groups[0]["value"] or 0.0
+        if previous_qty and previous_value:
+            previous_unit_cost = previous_value / previous_qty
+        else:
+            previous_unit_cost = 0.0
+        return previous_unit_cost, previous_qty
+
     def cost_price_avco_sync(self, vals, svl_previous_vals):  # noqa: C901
         dp_obj = self.env["decimal.precision"]
         precision_qty = dp_obj.precision_get("Product Unit of Measure")
@@ -270,10 +286,24 @@ class StockValuationLayer(models.Model):
                 or bypass
             ):
                 continue
-            previous_unit_cost = previous_qty = 0.0
-            svls_to_avco_sync = line.with_context(
+            # Get first SVL with remaining_qty to process from it
+            last_remaining_svl = self.sudo().search(
+                [
+                    ("company_id", "=", line.company_id.id),
+                    ("product_id", "=", line.product_id.id),
+                    ("remaining_qty", "!=", 0.0),
+                    ("id", "<", line.id),
+                ],
+                order="create_date, id",
+                limit=1,
+            )
+            from_svl = last_remaining_svl or line
+            svls_to_avco_sync = from_svl.with_context(
                 skip_avco_sync=True
             ).get_svls_to_avco_sync()
+            previous_unit_cost, previous_qty = svls_to_avco_sync[
+                :1
+            ].get_avco_sync_previous_values()
             vacuum_dic = defaultdict(list)
             inventory_processed = False
             unit_cost_processed = False
