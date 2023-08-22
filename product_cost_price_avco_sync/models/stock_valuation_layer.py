@@ -55,16 +55,13 @@ class StockValuationLayer(models.Model):
 
     def get_svls_to_avco_sync(self):
         self.ensure_one()
-        # return self.product_id.stock_valuation_layer_ids
         domain = [
             ("company_id", "=", self.company_id.id),
             ("product_id", "=", self.product_id.id),
         ]
-        return (
-            self.env["stock.valuation.layer"]
-            .sudo()
-            .search(domain, order="create_date, id")
-        )
+        if not self.env.context.get("force_all_avco_sync", False):
+            domain.append(("id", ">=", self.id))
+        return self.sudo().search(domain, order="create_date, id")
 
     def get_avco_svl_qty_unit_cost(self, line, vals):
         self.ensure_one()
@@ -81,9 +78,9 @@ class StockValuationLayer(models.Model):
         self, svl, svl_dic, line, svl_previous_vals, previous_unit_cost
     ):
         high_decimal_precision = 8
-        new_svl_qty = svl_dic["quantity"] + (
-            svl_previous_vals[line.id]["quantity"] - line.quantity
-        )
+        new_svl_qty = svl_dic["quantity"]
+        if line.id in svl_previous_vals:
+            new_svl_qty += svl_previous_vals[line.id]["quantity"] - line.quantity
         # Check if with the new difference the sign of the move changes
         if (new_svl_qty < 0 and svl.stock_move_id.location_id.usage == "inventory") or (
             new_svl_qty > 0 and svl.stock_move_id.location_dest_id.usage == "inventory"
