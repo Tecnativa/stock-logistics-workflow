@@ -260,6 +260,82 @@ class StockValuationLayer(models.Model):
         """
         return True
 
+    def _get_previous_qty_unit_cost(self):
+        self.ensure_one()
+        precision_qty = self.env["decimal.precision"].precision_get(
+            "Product Unit of Measure"
+        )
+        previous_unit_cost = previous_qty = 0
+        inventory_processed = False
+        unit_cost_processed = False
+        previous_svls = self.env["stock.valuation.layer"].search(
+            [
+                ("product_id", "=", self.product_id.id),
+                ("company_id", "=", self.company_id.id),
+                ("create_date", "<=", self.create_date),
+                ("id", "!=", self.id),
+            ],
+            order="create_date, id",
+        )
+        for svl in previous_svls:
+            if svl.stock_valuation_layer_id:
+                cost_to_add = svl.value
+                if cost_to_add and previous_qty:
+                    previous_unit_cost += cost_to_add / previous_qty
+                continue
+            qty = svl.quantity
+            unit_cost = svl.unit_cost
+            f_compare = float_compare(qty, 0.0, precision_digits=precision_qty)
+            # Keep inventory unit_cost if not previous incoming or manual adjustment
+            if not unit_cost_processed:
+                previous_unit_cost = unit_cost
+                if f_compare > 0.0:
+                    unit_cost_processed = True
+            # Adjust inventory IN and OUT
+            # Discard moves with a picking because they are not an inventory
+            if (
+                (
+                    svl.stock_move_id.location_id.usage == "inventory"
+                    or svl.stock_move_id.location_dest_id.usage == "inventory"
+                )
+                and not svl.stock_move_id.picking_id
+                and not svl.stock_move_id.scrapped
+            ):
+                if (
+                    not inventory_processed
+                    # Context to keep stock quantities after inventory qty update
+                    and self.env.context.get("keep_avco_inventory", False)
+                ):
+                    inventory_processed = True
+                previous_qty += qty
+            # Incoming line in layer
+            elif f_compare > 0:
+                total_qty = previous_qty + qty
+                # Return moves
+                if svl.stock_move_id and not svl.stock_move_id.move_orig_ids:
+                    unit_cost_processed = True
+                    if previous_qty <= 0.0:
+                        # Set income svl.unit_cost as previous_unit_cost
+                        previous_unit_cost = unit_cost
+                    else:
+                        previous_unit_cost = svl.get_avco_svl_price(
+                            previous_unit_cost, previous_qty, unit_cost, qty, total_qty,
+                        )
+                previous_qty = total_qty
+            # Outgoing line in layer
+            elif f_compare < 0:
+                previous_qty = previous_qty + qty
+            # Manual standard_price adjustment line in layer
+            elif (
+                not unit_cost and not qty and not svl.stock_move_id and svl.description
+            ):
+                unit_cost_processed = True
+                match_price = re.findall(r"[+-]?[0-9]+\.[0-9]+\)$", svl.description)
+                if match_price:
+                    standard_price = float(match_price[0][:-1])
+                    previous_unit_cost = standard_price
+        return (previous_unit_cost, previous_qty)
+
     def cost_price_avco_sync(self, vals, svl_previous_vals):  # noqa: C901
         dp_obj = self.env["decimal.precision"]
         precision_qty = dp_obj.precision_get("Product Unit of Measure")
@@ -272,7 +348,7 @@ class StockValuationLayer(models.Model):
                 or bypass
             ):
                 continue
-            previous_unit_cost = previous_qty = 0.0
+            previous_unit_cost, previous_qty = self._get_previous_qty_unit_cost()
             svls_to_avco_sync = line.with_context(
                 skip_avco_sync=True
             ).get_svls_to_avco_sync()
