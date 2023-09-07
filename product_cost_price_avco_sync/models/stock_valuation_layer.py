@@ -340,7 +340,7 @@ class StockValuationLayer(models.Model):
                 or bypass
             ):
                 continue
-            previous_unit_cost, previous_qty = self._get_previous_qty_unit_cost()
+            previous_unit_cost, previous_qty = line._get_previous_qty_unit_cost()
             svls_to_avco_sync = line.with_context(
                 skip_avco_sync=True
             ).get_svls_to_avco_sync()
