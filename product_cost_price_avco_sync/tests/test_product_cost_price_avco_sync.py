@@ -373,12 +373,32 @@ class TestProductCostPriceAvcoSync(TransactionCase):
 
         picking_out_01, move_out_01 = self.create_picking("OUT", qty=5.0)
 
+    def _update_create_date_svls(self, svl, interval):
+        self.env.cr.execute(
+            """UPDATE stock_valuation_layer
+            SET create_date = create_date + interval '%(interval)s seconds'
+            WHERE id = %(id)s
+            """,
+            {"interval": interval, "id": svl.id},
+        )
+        return interval + 1
+
     def test_change_quantiy_price_xx(self):
         """Write quantity and price to zero in a stock valuation layer"""
         # Case 1
+        interval = 0
         picking_in_01, move_in_01 = self.create_picking("IN", 10)
+        interval = self._update_create_date_svls(
+            move_in_01.stock_valuation_layer_ids, interval
+        )
         picking_in_02, move_in_02 = self.create_picking("IN", 10)
+        interval = self._update_create_date_svls(
+            move_in_02.stock_valuation_layer_ids, interval
+        )
         picking_out_01, move_out_01 = self.create_picking("OUT", qty=5.0)
+        interval = self._update_create_date_svls(
+            move_out_01.stock_valuation_layer_ids, interval
+        )
         quant = (
             self.env["stock.quant"]
             .with_context(inventory_mode=True)
@@ -420,6 +440,9 @@ class TestProductCostPriceAvcoSync(TransactionCase):
             )
         )
         picking_out_02, move_out_02 = self.create_picking("OUT", qty=10.0)
+        interval = self._update_create_date_svls(
+            move_out_02.stock_valuation_layer_ids, interval
+        )
         self.print_svl(
             "After OUT 10 Quant:{} Standard Price:{}".format(
                 quant.quantity, quant.product_id.standard_price
@@ -432,6 +455,9 @@ class TestProductCostPriceAvcoSync(TransactionCase):
             )
         )
         picking_in_03, move_in_03 = self.create_picking("IN", 2)
+        interval = self._update_create_date_svls(
+            move_in_03.stock_valuation_layer_ids, interval
+        )
         self.print_svl(
             "After IN 2 Quant:{} Standard Price:{}".format(
                 quant.quantity, quant.product_id.standard_price
@@ -444,12 +470,18 @@ class TestProductCostPriceAvcoSync(TransactionCase):
             )
         )
         picking_in_04, move_in_04 = self.create_picking("IN", 23)
+        interval = self._update_create_date_svls(
+            move_in_04.stock_valuation_layer_ids, interval
+        )
         self.print_svl(
             "After IN 23 Quant:{} Standard Price:{}".format(
                 quant.quantity, quant.product_id.standard_price
             )
         )
         picking_out_03, move_out_03 = self.create_picking("OUT", 8)
+        interval = self._update_create_date_svls(
+            move_out_03.stock_valuation_layer_ids, interval
+        )
         self.print_svl(
             "After OUT 8 Quant:{} Standard Price:{}".format(
                 quant.quantity, quant.product_id.standard_price
