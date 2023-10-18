@@ -311,7 +311,7 @@ class StockValuationLayer(models.Model):
                         previous_unit_cost = unit_cost
                     else:
                         previous_unit_cost = svl.get_avco_svl_price(
-                            previous_unit_cost, previous_qty, unit_cost, qty, total_qty,
+                            previous_unit_cost, previous_qty, unit_cost, qty
                         )
                 previous_qty = total_qty
             # Outgoing line in layer
