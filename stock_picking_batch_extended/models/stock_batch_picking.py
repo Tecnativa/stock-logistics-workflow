@@ -85,7 +85,7 @@ class StockPickingBatch(models.Model):
         action = self.picking_ids.action_picking_move_tree()
         action["views"] = [
             (
-                self.env.ref("stock_picking_batch.view_picking_move_tree_inherited").id,
+                self.env.ref("stock.stock_move_view_list_from_batch").id,
                 "list",
             ),
         ]

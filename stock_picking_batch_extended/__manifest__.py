@@ -5,15 +5,15 @@
 {
     "name": "Stock batch picking extended",
     "summary": "Allows manage a lot of pickings in batch",
-    "version": "19.0.1.0.0",
+    "version": "20.0.1.0.0",
     "author": "Camptocamp, Tecnativa, Odoo Community Association (OCA)",
     "development_status": "Mature",
     "maintainers": ["gurneyalex", "carlosdauden", "i-vyshnevska"],
     "category": "Warehouse Management",
-    "depends": ["stock_picking_batch", "stock_delivery"],
+    "depends": ["stock_delivery"],
     "website": "https://github.com/OCA/stock-logistics-workflow",
     "data": [
-        "security/ir.model.access.csv",
+        "security/ir.access.csv",
         "data/batch_picking_actions_server.xml",
         "views/stock_batch_picking.xml",
         "views/product_template_views.xml",

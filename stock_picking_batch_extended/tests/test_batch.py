@@ -9,6 +9,8 @@ from odoo.addons.base.tests.common import BaseCommon
 
 @tagged("post_install", "-at_install")
 class TestBatchPicking(BaseCommon):
+    _test_user_groups = ("stock.group_stock_manager", "stock.group_stock_picking_batch")
+
     @classmethod
     def _create_product(cls, name, product_type="consu"):
         return cls.env["product.product"].create({"name": name, "type": product_type})
@@ -149,7 +151,7 @@ class TestBatchPicking(BaseCommon):
         self.assertEqual("cancel", self.picking2.state)
 
     def test_cancel_not_use_oca_batch_validation(self):
-        self.env.company.use_oca_batch_validation = False
+        self.env.company.sudo().use_oca_batch_validation = False
         self.assertEqual("draft", self.batch.state)
         self.assertEqual(2, self.batch.picking_count)
         self.assertEqual("assigned", self.picking.state)
@@ -220,8 +222,12 @@ class TestBatchPicking(BaseCommon):
         wizard = wizard_model.create({"name": "Unittest wizard"})
         self.assertEqual(self.env.user, wizard.user_id)
 
-        other_wh = self.env["stock.warehouse"].create(
-            {"name": "Unittest other warehouse", "code": "UWH"}
+        # Warehouses and users are set up by an administrator
+        other_wh = (
+            self.env["stock.warehouse"]
+            .sudo()
+            .create({"name": "Unittest other warehouse", "code": "UWH"})
+            .sudo(False)
         )
 
         wizard = wizard_model.with_context(warehouse_id=other_wh.id).create(
@@ -229,8 +235,10 @@ class TestBatchPicking(BaseCommon):
         )
         self.assertFalse(wizard.user_id)
 
-        user2 = self.env["res.users"].create(
-            {"name": "Unittest user", "login": "unittest_user"}
+        user2 = (
+            self.env["res.users"]
+            .sudo()
+            .create({"name": "Unittest user", "login": "unittest_user"})
         )
         other_wh.default_user_id = user2
         wizard = wizard_model.with_context(warehouse_id=other_wh.id).create(
