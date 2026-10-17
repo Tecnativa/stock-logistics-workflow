@@ -26,7 +26,7 @@ patch(SMLX2ManyField.prototype, {
      */
     _getOwnerRestrictionDomain() {
         const data = this.props.record.data;
-        const ownerId = data.restricted_owner_id ? data.restricted_owner_id[0] : false;
+        const ownerId = data.restricted_owner_id ? data.restricted_owner_id.id : false;
         switch (data.owner_restriction) {
             case "unassigned_owner":
                 return [["owner_id", "=", false]];
