@@ -7,6 +7,12 @@ from odoo.addons.base.tests.common import BaseCommon
 
 
 class TestProcurementPurchaseNoGroupingComment(BaseCommon):
+    _test_user_groups = (
+        "sales_team.group_sale_salesman_all_leads",
+        "purchase.group_purchase_user",
+        "stock.group_stock_user",
+    )
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -30,13 +36,13 @@ class TestProcurementPurchaseNoGroupingComment(BaseCommon):
     def _build_procurement(self, vendor_comment, qty=1.0):
         values = {
             # Must be a recordset, not an id: core's `_get_rule_domain` does
-            # `values["company_id"].ids`. `ProcurementGroup.run()` would set it
+            # `values["company_id"].ids`. `StockRule.run()` would set it
             # that way, but we call `_get_rule` and `_run_buy` directly.
             "company_id": self.env.company,
             "date_planned": fields.Datetime.now(),
             "vendor_comment": vendor_comment,
         }
-        procurement = self.env["procurement.group"].Procurement(
+        procurement = self.env["stock.rule"].Procurement(
             self.product,
             qty,
             self.product.uom_id,
@@ -46,7 +52,7 @@ class TestProcurementPurchaseNoGroupingComment(BaseCommon):
             self.env.company,
             values,
         )
-        rule = self.env["procurement.group"]._get_rule(
+        rule = self.env["stock.rule"]._get_rule(
             procurement.product_id, procurement.location_id, procurement.values
         )
         return procurement, rule
@@ -160,10 +166,9 @@ class TestProcurementPurchaseNoGroupingComment(BaseCommon):
         """
         move = self.env["stock.move"].create(
             {
-                "name": "Test move",
                 "product_id": self.product.id,
                 "product_uom_qty": 1.0,
-                "product_uom": self.product.uom_id.id,
+                "uom_id": self.product.uom_id.id,
                 "location_id": self.env.ref("stock.stock_location_suppliers").id,
                 "location_dest_id": self.location.id,
                 "vendor_id": self.vendor.id,
