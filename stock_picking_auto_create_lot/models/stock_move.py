@@ -13,11 +13,17 @@ class StockMove(models.Model):
         "picking_type_id.use_existing_lots",
         "state",
     )
+    # pylint: disable=missing-return
     def _compute_display_assign_serial(self):
         super()._compute_display_assign_serial()
         moves_not_display = self.filtered(
-            lambda m: m.picking_type_id.auto_create_lot
-            and (m.product_id.auto_create_lot or m.product_id.categ_id.auto_create_lot)
+            lambda m: (
+                m.picking_type_id.auto_create_lot
+                and (
+                    m.product_id.auto_create_lot
+                    or m.product_id.categ_id.auto_create_lot
+                )
+            )
         )
         for move in moves_not_display:
             move.display_assign_serial = False
@@ -29,7 +35,7 @@ class StockMove(models.Model):
             if move.state not in ("partially_available", "assigned"):
                 continue
             if (
-                move.product_id.tracking == "none"
+                not move.product_id.tracking
                 or not (
                     move.product_id.auto_create_lot
                     or move.product_id.categ_id.auto_create_lot
