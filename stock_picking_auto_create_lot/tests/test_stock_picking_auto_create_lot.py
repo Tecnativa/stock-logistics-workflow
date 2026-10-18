@@ -137,8 +137,10 @@ class TestStockPickingAutoCreateLot(CommonStockPickingAutoCreateLot, Transaction
             serials.append(move.lot_id.name)
         self.assertUniqueIn(serials)
         move_lines_serial = self.picking.move_line_ids.filtered(
-            lambda m: m.product_id.tracking == "serial"
-            and m.product_id.categ_id.auto_create_lot
+            lambda m: (
+                m.product_id.tracking == "serial"
+                and m.product_id.categ_id.auto_create_lot
+            )
         )
         serials = []
         for move in move_lines_serial:
@@ -163,7 +165,8 @@ class TestStockPickingAutoCreateLot(CommonStockPickingAutoCreateLot, Transaction
             lambda m: (
                 m.product_id == self.product_serial
                 and (
-                    m.product_id.auto_create_lot or m.product_id.categ_id.auto_create_lot
+                    m.product_id.auto_create_lot
+                    or m.product_id.categ_id.auto_create_lot
                 )
             )
         )
@@ -207,3 +210,22 @@ class TestStockPickingAutoCreateLot(CommonStockPickingAutoCreateLot, Transaction
         moves.move_line_ids.quantity = 1.0
         for line in moves.move_line_ids:
             line.lot_name = self.env["ir.sequence"].next_by_code("stock.lot.serial")
+
+    def test_auto_create_lot_with_product_prefix(self):
+        """The lots take the custom lot prefix of the product"""
+        self.product_serial.serial_prefix_format = "HAKE-"
+        self.picking.action_assign()
+        move = self.picking.move_ids.filtered(
+            lambda m: m.product_id == self.product_serial_not_auto
+        )
+        self._assign_manual_serials(move)
+        self.picking.move_ids.picked = True
+        self.picking._action_done()
+        lots = self.env["stock.lot"].search(
+            [("product_id", "=", self.product_serial.id)]
+        )
+        self.assertEqual(len(lots), 3)
+        self.assertTrue(all(name.startswith("HAKE-") for name in lots.mapped("name")))
+        # Products without a custom prefix keep the general sequence
+        other_lot = self.env["stock.lot"].search([("product_id", "=", self.product.id)])
+        self.assertFalse(other_lot.name.startswith("HAKE-"))

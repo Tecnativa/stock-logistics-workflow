@@ -4,6 +4,8 @@ To configure this module, you need to:
 2.  Set 'auto create lot' option for this operation type.
 3.  Go to a *Inventory \> Master Data \> Products*.
 4.  Set 'auto create lot' option for the products you need.
+5.  Optionally, set a *Custom Lot/Serial* prefix on the product: the lots created
+    automatically take the lot sequence of the product, as the lots Odoo generates.
 
 
 It's possible to configure by code a way to force the setting of the auto lot when
