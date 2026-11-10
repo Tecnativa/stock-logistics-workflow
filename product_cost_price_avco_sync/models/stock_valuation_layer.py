@@ -324,6 +324,42 @@ class StockValuationLayer(models.Model):
             and self.description
         )
 
+    def _get_avco_returned_unit_cost(self, svls_dic):
+        """Unit cost of the move this layer returns, or None when the layer is
+        not a return of a move valued for the same product and company.
+
+        Core values a return at the cost of the returned move, its layers plus
+        the ones hanging from them (`stock.move._get_price_unit`), and the
+        replay has to do the same: taking the running cost instead makes the
+        value of a return depend on when the chain was last replayed. The
+        returned layers that are part of this replay count with their replayed
+        figures, the earlier ones with what they hold.
+        """
+        self.ensure_one()
+        returned_move = self.stock_move_id.origin_returned_move_id.sudo()
+        if not returned_move:
+            return None
+        layers = returned_move.stock_valuation_layer_ids.filtered(
+            lambda x: x.company_id == self.company_id
+        )
+        # Same exclusion as core: dropshipping adds positive layers that do not
+        # take part in the valuation
+        if returned_move._is_dropshipped() or returned_move._is_dropshipped_returned():
+            rounding = self.uom_id.rounding
+            layers = layers.filtered(
+                lambda x: float_compare(x.value, 0.0, precision_rounding=rounding) <= 0
+            )
+        layers |= layers.stock_valuation_layer_ids
+        replayed = svls_dic[(self.product_id, self.company_id)]["svls"]
+        quantity = value = 0.0
+        for layer in layers:
+            layer_data = replayed.get(layer) or layer
+            quantity += layer_data["quantity"]
+            value += layer_data["value"]
+        if float_is_zero(quantity, precision_rounding=self.uom_id.rounding):
+            return None
+        return value / quantity
+
     def _process_avco_sync_one(self, svls_dic, dry=False):  # noqa: C901
         """Process the syncronization of the current SVL in self. If this method is
         executed, the sync is processable. If you need to block this processing,
@@ -406,13 +442,20 @@ class StockValuationLayer(models.Model):
             svl_dic["previous_qty"] += qty
         # Incoming line in layer
         elif f_compare > 0:
-            # Return moves
-            if not self.stock_move_id or self.stock_move_id.move_orig_ids:
+            returned_unit_cost = self._get_avco_returned_unit_cost(svls_dic)
+            # Moves chained to a previous one that is not a valued returned move
+            if returned_unit_cost is None and (
+                not self.stock_move_id or self.stock_move_id.move_orig_ids
+            ):
                 self._update_avco_svl_values(
                     svl_data, unit_cost=svl_dic["previous_unit_cost"]
                 )
-            # Normal incoming moves
+            # Normal incoming moves, and returns, which come back with the cost
+            # of the returned move and average in like any other receipt: with
+            # no stock on hand they set the cost, as core does
             else:
+                if returned_unit_cost is not None:
+                    self._update_avco_svl_values(svl_data, unit_cost=returned_unit_cost)
                 svl_dic["unit_cost_processed"] = True
                 if svl_dic["previous_qty"] <= 0.0:
                     # Set income svl.unit_cost as previous_unit_cost
@@ -421,7 +464,7 @@ class StockValuationLayer(models.Model):
                     svl_dic["previous_unit_cost"] = self._get_avco_svl_price(
                         svl_dic["previous_unit_cost"],
                         svl_dic["previous_qty"],
-                        self.unit_cost,
+                        svl_data["unit_cost"],
                         self.quantity,
                     )
             svl_dic["previous_qty"] += self.quantity
